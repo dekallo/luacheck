@@ -1,0 +1,19 @@
+-- Example .luacheckrc for WoW addons
+-- See https://luacheck.readthedocs.io/en/stable/config.html
+std = "lua51"
+max_line_length = false
+codes = true
+files["Locales/*.lua"].ignore = {
+    "211/L"
+}
+ignore = {
+    "212/self"
+}
+globals = {
+    "CreateFrame",
+    "Enum",
+    "GameTooltip",
+    "LibStub",
+    "C_Item",
+    "C_Timer",
+}

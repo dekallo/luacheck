@@ -1,0 +1,13 @@
+# Self-test: run luacheck on this repo
+name: Luacheck
+on: [push, pull_request]
+
+jobs:
+  luacheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run luacheck
+        run: |
+          docker build -t luacheck .
+          docker run -v "$PWD:/workspace" -e INPUT_FILES=test -e INPUT_PATH=/workspace -e GITHUB_WORKSPACE=/workspace luacheck

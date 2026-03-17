@@ -1,0 +1,43 @@
+name: luacheck
+description: Runs luacheck in a pre-built Docker container. No setup, instant run.
+branding:
+  icon: check-square
+  color: yellow
+
+inputs:
+  files:
+    description: >
+      Files, rockspecs, or directories to check. Relative to path.
+    required: false
+    default: '.'
+  path:
+    description: >
+      Working directory for luacheck. Defaults to the workspace.
+    required: false
+    default: ${{ github.workspace }}
+  args:
+    description: >
+      Additional luacheck arguments. See https://luacheck.readthedocs.io/en/stable/cli.html
+    required: false
+    default: ''
+  config:
+    description: >
+      URL to a custom .luacheckrc config file.
+    required: false
+    default: ''
+  annotate:
+    description: >
+      Emit GitHub annotations for issues. "none", "warning", or "error".
+      Requires warnings not be suppressed (avoid -qq or -qqq with args).
+    required: false
+    default: none
+
+runs:
+  using: docker
+  image: docker://ghcr.io/dekallo/luacheck:latest
+  env:
+    INPUT_FILES: ${{ inputs.files }}
+    INPUT_PATH: ${{ inputs.path }}
+    INPUT_ARGS: ${{ inputs.args }}
+    INPUT_CONFIG: ${{ inputs.config }}
+    INPUT_ANNOTATE: ${{ inputs.annotate }}
