@@ -49,5 +49,20 @@ output=$(mktemp)
 trap 'rm -f "$output"' EXIT
 luacheck --no-cache $ARGS -- $FILES > "$output" 2>&1
 exitcode=$?
+
+# Always show output (grouped in logs)
+echo "::group::Luacheck output"
 cat "$output" | annotate
+echo "::endgroup::"
+
+# On failure, add to job summary so it's visible
+if [ $exitcode -ne 0 ] && [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+    {
+        echo "## Luacheck found issues"
+        echo '```'
+        cat "$output"
+        echo '```'
+    } >> "$GITHUB_STEP_SUMMARY"
+fi
+
 exit $exitcode
