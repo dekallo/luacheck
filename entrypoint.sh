@@ -3,7 +3,8 @@ set -e
 
 # Parse inputs (from env when used as GitHub Action)
 FILES="${INPUT_FILES:-.}"
-PATH_DIR="${INPUT_PATH:-${GITHUB_WORKSPACE:-.}}"
+# In container actions, workspace is at /github/workspace; INPUT_PATH may be host path
+PATH_DIR="${GITHUB_WORKSPACE:-${INPUT_PATH:-.}}"
 ARGS="${INPUT_ARGS:-}"
 CONFIG_URL="${INPUT_CONFIG:-}"
 ANNOTATE="${INPUT_ANNOTATE:-none}"
@@ -43,10 +44,10 @@ annotate() {
     esac
 }
 
-# Run luacheck (--no-cache from base image, pass through args and files)
+# Run luacheck (--no-cache for CI reproducibility)
 output=$(mktemp)
 trap 'rm -f "$output"' EXIT
-luacheck $ARGS -- $FILES > "$output" 2>&1
+luacheck --no-cache $ARGS -- $FILES > "$output" 2>&1
 exitcode=$?
 cat "$output" | annotate
 exit $exitcode
