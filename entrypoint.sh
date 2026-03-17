@@ -1,8 +1,6 @@
 #!/bin/sh
 set -e
 
-echo "::group::Luacheck output"
-
 # Parse inputs (from env when used as GitHub Action)
 FILES="${INPUT_FILES:-.}"
 WORK_DIR="${GITHUB_WORKSPACE:-.}"
@@ -28,7 +26,6 @@ annotate() {
     case "$ANNOTATE" in
         warning|error)
             awk -F':' -v level="$ANNOTATE" '
-            { print $0 }
             /^[[:space:]]+.+:[0-9]+:[0-9]+:/ {
                 file = $1
                 gsub(/^[[:space:]]+/, "", file)
@@ -37,7 +34,9 @@ annotate() {
                 msg = $4
                 gsub(/^[[:space:]]+/, "", msg)
                 printf "::%s file=%s,line=%s,col=%s::%s\n", level, file, line, col, msg
-            }'
+                next
+            }
+            { print $0 }'
             ;;
         *)
             cat
@@ -54,6 +53,5 @@ exitcode=$?
 set -e
 
 annotate < "$output"
-echo "::endgroup::"
 
 exit $exitcode
