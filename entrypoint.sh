@@ -41,7 +41,7 @@ annotate() {
                 msg = $4
                 for (i = 5; i <= NF; i++) msg = msg ":" $i
                 gsub(/^[[:space:]]+/, "", msg)
-                printf "::%s file=%s,line=%s,col=%s::    %s:%s:%s: %s\n", level, file, line, col, file, line, col, msg
+                printf "::%s file=%s,line=%s,col=%s::%s:%s:%s: %s\n", level, file, line, col, file, line, col, msg
                 next
             }
             {
