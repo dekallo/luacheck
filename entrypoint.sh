@@ -49,19 +49,13 @@ trap 'rm -f "$output"' EXIT
 luacheck --no-cache $ARGS -- $FILES > "$output" 2>&1
 exitcode=$?
 
-# Emit output so runner shows it (no pipe to avoid buffering)
-echo "::group::Luacheck output"
-annotate < "$output"
-echo "::endgroup::"
+# Write output and exit code to workspace so host can display them.
+# Container stdout may not flush before exit on failure; host cat guarantees visibility.
+{
+    echo "::group::Luacheck output"
+    annotate < "$output"
+    echo "::endgroup::"
+} > "$WORK_DIR/.luacheck_action_out" 2>&1
+echo "$exitcode" > "$WORK_DIR/.luacheck_action_exit"
 
-# On failure, add to job summary so it's visible
-if [ $exitcode -ne 0 ] && [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-    {
-        echo "## Luacheck found issues"
-        echo '```'
-        cat "$output"
-        echo '```'
-    } >> "$GITHUB_STEP_SUMMARY"
-fi
-
-exit $exitcode
+exit 0

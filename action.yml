@@ -49,4 +49,9 @@ runs:
           -e INPUT_ANNOTATE="${{ inputs.annotate }}" \
           -e GITHUB_WORKSPACE=/workspace \
           ghcr.io/dekallo/luacheck:latest
+        docker_exit=$?
+        [ -f .luacheck_action_out ] && cat .luacheck_action_out
+        exitcode=$(cat .luacheck_action_exit 2>/dev/null || echo "$docker_exit")
+        rm -f .luacheck_action_out .luacheck_action_exit
+        exit "$exitcode"
       shell: bash
