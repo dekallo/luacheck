@@ -4,7 +4,9 @@ set -e
 # Parse inputs (from env when used as GitHub Action)
 FILES="${INPUT_FILES:-.}"
 WORK_DIR="${GITHUB_WORKSPACE:-.}"
-[ -n "$INPUT_PATH" ] && WORK_DIR="$WORK_DIR/$INPUT_PATH"
+if [ -n "$INPUT_PATH" ] && [ "$INPUT_PATH" != "." ] && [ "$INPUT_PATH" != "$GITHUB_WORKSPACE" ]; then
+    WORK_DIR="$WORK_DIR/$INPUT_PATH"
+fi
 ARGS="${INPUT_ARGS:-}"
 CONFIG_URL="${INPUT_CONFIG:-}"
 ANNOTATE="${INPUT_ANNOTATE:-none}"
