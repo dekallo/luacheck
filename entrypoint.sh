@@ -49,9 +49,9 @@ trap 'rm -f "$output"' EXIT
 luacheck --no-cache $ARGS -- $FILES > "$output" 2>&1
 exitcode=$?
 
-# Always show output (grouped in logs)
+# Emit output so runner shows it (no pipe to avoid buffering)
 echo "::group::Luacheck output"
-cat "$output" | annotate
+annotate < "$output"
 echo "::endgroup::"
 
 # On failure, add to job summary so it's visible
