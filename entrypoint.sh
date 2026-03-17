@@ -49,13 +49,9 @@ trap 'rm -f "$output"' EXIT
 luacheck --no-cache $ARGS -- $FILES > "$output" 2>&1
 exitcode=$?
 
-# Write output and exit code to workspace so host can display them.
-# Container stdout may not flush before exit on failure; host cat guarantees visibility.
-{
-    echo "::group::Luacheck output"
-    annotate < "$output"
-    echo "::endgroup::"
-} > "$WORK_DIR/.luacheck_action_out" 2>&1
-echo "$exitcode" > "$WORK_DIR/.luacheck_action_exit"
+# Emit output to stdout (host captures and re-prints so it's visible on failure)
+echo "::group::Luacheck output"
+annotate < "$output"
+echo "::endgroup::"
 
-exit 0
+exit $exitcode

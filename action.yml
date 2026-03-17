@@ -37,10 +37,8 @@ runs:
   steps:
     - name: Run luacheck
       run: |
-        echo "::group::Pull luacheck image"
-        docker pull ghcr.io/dekallo/luacheck:latest
-        echo "::endgroup::"
-        docker run --rm \
+        docker pull -q ghcr.io/dekallo/luacheck:latest
+        output=$(docker run --rm \
           -v "${{ github.workspace }}:/workspace" \
           -w /workspace \
           -e INPUT_FILES="${{ inputs.files }}" \
@@ -48,10 +46,8 @@ runs:
           -e INPUT_CONFIG="${{ inputs.config }}" \
           -e INPUT_ANNOTATE="${{ inputs.annotate }}" \
           -e GITHUB_WORKSPACE=/workspace \
-          ghcr.io/dekallo/luacheck:latest
-        docker_exit=$?
-        [ -f .luacheck_action_out ] && cat .luacheck_action_out
-        exitcode=$(cat .luacheck_action_exit 2>/dev/null || echo "$docker_exit")
-        rm -f .luacheck_action_out .luacheck_action_exit
+          ghcr.io/dekallo/luacheck:latest 2>&1)
+        exitcode=$?
+        printf '%s\n' "$output"
         exit "$exitcode"
       shell: bash
