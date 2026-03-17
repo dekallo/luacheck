@@ -4,6 +4,7 @@ set -e
 # Parse inputs (from env when used as GitHub Action)
 FILES="${INPUT_FILES:-.}"
 WORK_DIR="${GITHUB_WORKSPACE:-.}"
+[ -n "$INPUT_PATH" ] && WORK_DIR="$WORK_DIR/$INPUT_PATH"
 ARGS="${INPUT_ARGS:-}"
 CONFIG_URL="${INPUT_CONFIG:-}"
 ANNOTATE="${INPUT_ANNOTATE:-none}"
@@ -26,17 +27,27 @@ annotate() {
     case "$ANNOTATE" in
         warning|error)
             awk -F':' -v level="$ANNOTATE" '
-            /^[[:space:]]+.+:[0-9]+:[0-9]+:/ {
-                file = $1
-                gsub(/^[[:space:]]+/, "", file)
-                line = $2
-                col = $3
-                msg = $4
-                gsub(/^[[:space:]]+/, "", msg)
-                printf "::%s file=%s,line=%s,col=%s::%s\n", level, file, line, col, msg
+            BEGIN { blank = "" }
+            /^[[:space:]]*$/ {
+                blank = blank $0 "\n"
                 next
             }
-            { print $0 }'
+            /^[[:space:]]+.+:[0-9]+:[0-9]+:/ {
+                blank = ""
+                file = $1; gsub(/^[[:space:]]+/, "", file)
+                line = $2; col = $3
+                msg = $4
+                for (i = 5; i <= NF; i++) msg = msg ":" $i
+                gsub(/^[[:space:]]+/, "", msg)
+                printf "::%s file=%s,line=%s,col=%s::    %s:%s:%s: %s\n", level, file, line, col, file, line, col, msg
+                next
+            }
+            {
+                printf "%s", blank
+                blank = ""
+                print $0
+            }
+            END { printf "%s", blank }'
             ;;
         *)
             cat

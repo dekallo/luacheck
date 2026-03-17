@@ -33,7 +33,7 @@ jobs:
 | Input | Default | Description |
 |-------|---------|-------------|
 | `files` | `.` | Files, rockspecs, or directories to check |
-| `path` | `github.workspace` | Working directory |
+| `path` | `.` | Working directory (relative to workspace) |
 | `args` | `""` | Extra luacheck CLI arguments (see below) |
 | `config` | `""` | URL to custom `.luacheckrc` |
 | `annotate` | `none` | `none`, `warning`, or `error` — show issues as PR annotations (incompatible with `-qq`/`-qqq`) |
@@ -47,7 +47,7 @@ jobs:
 | `-qqq` | Summary line only |
 | `--codes` | Show warning/error codes (e.g. `W211`) |
 | `--ranges` | Show column ranges for issues |
-| `--no-cache` | Disable cache (recommended in CI) |
+| `--no-cache` | Disable cache (action already uses this) |
 
 Full reference: [luacheck CLI docs](https://luacheck.readthedocs.io/en/stable/cli.html)
 

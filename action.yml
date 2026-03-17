@@ -12,9 +12,9 @@ inputs:
     default: '.'
   path:
     description: >
-      Working directory for luacheck. Defaults to the workspace.
+      Working directory for luacheck. Relative to workspace root. Use "." for repo root.
     required: false
-    default: ${{ github.workspace }}
+    default: '.'
   args:
     description: >
       Additional luacheck arguments. See https://luacheck.readthedocs.io/en/stable/cli.html
@@ -37,12 +37,13 @@ runs:
   steps:
     - name: Run luacheck
       run: |
-        set +e
         docker pull -q ghcr.io/dekallo/luacheck:latest >/dev/null 2>&1
+        set +e
         output=$(docker run --rm \
           -v "${{ github.workspace }}:/workspace" \
           -w /workspace \
           -e INPUT_FILES="${{ inputs.files }}" \
+          -e INPUT_PATH="${{ inputs.path }}" \
           -e INPUT_ARGS="${{ inputs.args }}" \
           -e INPUT_CONFIG="${{ inputs.config }}" \
           -e INPUT_ANNOTATE="${{ inputs.annotate }}" \
@@ -52,7 +53,7 @@ runs:
         if [ -n "$output" ]; then
           echo "$output"
         else
-          echo "::warning::No output from luacheck container (image may need rebuild)"
+          echo "::warning::No output from luacheck container"
         fi
         exit "$exitcode"
       shell: bash
