@@ -3,8 +3,7 @@ set -e
 
 # Parse inputs (from env when used as GitHub Action)
 FILES="${INPUT_FILES:-.}"
-# In container actions, workspace is at /github/workspace; INPUT_PATH may be host path
-PATH_DIR="${GITHUB_WORKSPACE:-${INPUT_PATH:-.}}"
+WORK_DIR="${GITHUB_WORKSPACE:-.}"
 ARGS="${INPUT_ARGS:-}"
 CONFIG_URL="${INPUT_CONFIG:-}"
 ANNOTATE="${INPUT_ANNOTATE:-none}"
@@ -18,8 +17,8 @@ if [ -n "$CONFIG_URL" ]; then
     fi
 fi
 
-# Change to working directory
-cd "$PATH_DIR"
+# Change to working directory (composite action sets GITHUB_WORKSPACE=/workspace)
+cd "$WORK_DIR"
 
 # Annotate function: parses luacheck output and emits GitHub workflow commands
 # Luacheck format: "    path/to/file.lua:42:7: message"

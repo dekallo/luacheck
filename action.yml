@@ -33,11 +33,17 @@ inputs:
     default: none
 
 runs:
-  using: docker
-  image: docker://ghcr.io/dekallo/luacheck:latest
-  env:
-    INPUT_FILES: ${{ inputs.files }}
-    INPUT_PATH: ${{ inputs.path }}
-    INPUT_ARGS: ${{ inputs.args }}
-    INPUT_CONFIG: ${{ inputs.config }}
-    INPUT_ANNOTATE: ${{ inputs.annotate }}
+  using: composite
+  steps:
+    - name: Run luacheck
+      run: |
+        docker run --rm \
+          -v "${{ github.workspace }}:/workspace" \
+          -w /workspace \
+          -e INPUT_FILES="${{ inputs.files }}" \
+          -e INPUT_ARGS="${{ inputs.args }}" \
+          -e INPUT_CONFIG="${{ inputs.config }}" \
+          -e INPUT_ANNOTATE="${{ inputs.annotate }}" \
+          -e GITHUB_WORKSPACE=/workspace \
+          ghcr.io/dekallo/luacheck:latest
+      shell: bash
