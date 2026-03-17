@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+echo "::group::Luacheck output"
+
 # Parse inputs (from env when used as GitHub Action)
 FILES="${INPUT_FILES:-.}"
 WORK_DIR="${GITHUB_WORKSPACE:-.}"
@@ -46,11 +48,11 @@ annotate() {
 # Run luacheck (--no-cache for CI reproducibility)
 output=$(mktemp)
 trap 'rm -f "$output"' EXIT
+set +e
 luacheck --no-cache $ARGS -- $FILES > "$output" 2>&1
 exitcode=$?
+set -e
 
-# Emit output to stdout (host captures and re-prints so it's visible on failure)
-echo "::group::Luacheck output"
 annotate < "$output"
 echo "::endgroup::"
 

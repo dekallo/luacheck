@@ -37,10 +37,9 @@ runs:
   steps:
     - name: Run luacheck
       run: |
-        docker pull -q ghcr.io/dekallo/luacheck:latest
-        tmp=$(mktemp)
-        trap "rm -f $tmp" EXIT
-        docker run --rm \
+        set +e
+        docker pull -q ghcr.io/dekallo/luacheck:latest >/dev/null 2>&1
+        output=$(docker run --rm \
           -v "${{ github.workspace }}:/workspace" \
           -w /workspace \
           -e INPUT_FILES="${{ inputs.files }}" \
@@ -48,10 +47,10 @@ runs:
           -e INPUT_CONFIG="${{ inputs.config }}" \
           -e INPUT_ANNOTATE="${{ inputs.annotate }}" \
           -e GITHUB_WORKSPACE=/workspace \
-          ghcr.io/dekallo/luacheck:latest > "$tmp" 2>&1
+          ghcr.io/dekallo/luacheck:latest 2>&1)
         exitcode=$?
-        if [ -s "$tmp" ]; then
-          cat "$tmp"
+        if [ -n "$output" ]; then
+          echo "$output"
         else
           echo "::warning::No output from luacheck container (image may need rebuild)"
         fi
