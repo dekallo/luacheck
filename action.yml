@@ -37,6 +37,9 @@ runs:
   steps:
     - name: Run luacheck
       run: |
+        echo "::group::Pull luacheck image"
+        docker pull ghcr.io/dekallo/luacheck:latest
+        echo "::endgroup::"
         docker run --rm \
           -v "${{ github.workspace }}:/workspace" \
           -w /workspace \
