@@ -2,3 +2,6 @@
 .github
 *.md
 .gitignore
+test
+action.yml
+.luacheckrc.example

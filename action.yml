@@ -1,5 +1,5 @@
 name: luacheck
-description: Runs luacheck in a pre-built Docker container. No setup, instant run.
+description: Runs luacheck in a pre-built Docker container. Optionally runs a Lua test script (from URL or path) before or instead of luacheck.
 branding:
   icon: check-square
   color: yellow
