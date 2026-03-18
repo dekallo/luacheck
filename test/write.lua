@@ -1,4 +1,5 @@
--- Writes a marker file to cwd. Validates that scripts can modify repo files.
+-- Writes test/.written-by-script to cwd. Used by script-writes-repo workflow job
+-- to verify that custom scripts can modify repo files (e.g. code generation).
 local f = io.open("test/.written-by-script", "w")
 if f then
   f:write("ok\n")

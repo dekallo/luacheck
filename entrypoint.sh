@@ -1,7 +1,10 @@
 #!/bin/sh
+# luacheck GitHub Action entrypoint.
+# Runs luacheck (optional) and/or a custom Lua script. Reads inputs from env vars
+# set by the composite action (INPUT_* and GITHUB_WORKSPACE).
 set -e
 
-# Parse inputs (from env when used as GitHub Action)
+# --- Parse inputs (from env when used as GitHub Action) ---
 FILES="${INPUT_FILES:-.}"
 WORK_DIR="${GITHUB_WORKSPACE:-.}"
 if [ -n "$INPUT_PATH" ] && [ "$INPUT_PATH" != "." ] && [ "$INPUT_PATH" != "$GITHUB_WORKSPACE" ]; then
@@ -15,7 +18,7 @@ CUSTOM_ARGS="${INPUT_CUSTOM_ARGS:-.}"
 RUN_LUACHECK="${INPUT_RUN_LUACHECK:-true}"
 FAIL_FAST="${INPUT_FAIL_FAST:-false}"
 
-# Download custom config if URL provided
+# --- Download custom .luacheckrc if URL provided ---
 if [ -n "$CONFIG_URL" ]; then
     mkdir -p ~/.config/luacheck
     if ! curl -fsSL "$CONFIG_URL" -o ~/.config/luacheck/.luacheckrc; then
@@ -24,11 +27,13 @@ if [ -n "$CONFIG_URL" ]; then
     fi
 fi
 
-# Change to working directory (composite action sets GITHUB_WORKSPACE=/workspace)
+# --- Change to working directory ---
+# Composite action mounts workspace at /workspace; path may target a subdir.
 cd "$WORK_DIR"
 
-# Annotate function: parses luacheck output and emits GitHub workflow commands
-# Luacheck format: "    path/to/file.lua:42:7: message"
+# --- Annotate: convert luacheck output to GitHub workflow commands ---
+# When annotate=warning|error, parses luacheck lines and emits ::warning:: or ::error::
+# so issues appear as PR annotations. Luacheck format: "    path/to/file.lua:42:7: message"
 annotate() {
     case "$ANNOTATE" in
         warning|error)
@@ -61,7 +66,7 @@ annotate() {
     esac
 }
 
-# Run luacheck if enabled
+# --- Run luacheck if enabled ---
 luacheck_exit=0
 if [ "$RUN_LUACHECK" = "true" ]; then
     echo "Running luacheck:"
@@ -77,13 +82,15 @@ if [ "$RUN_LUACHECK" = "true" ]; then
     fi
 fi
 
-# Run custom script when provided (URL or path)
+# --- Run custom script when provided (URL or path) ---
+# Script runs after luacheck. Can be a local path (relative to path) or http(s) URL.
 script_exit=0
 if [ -n "$CUSTOM_SCRIPT" ]; then
     [ "$RUN_LUACHECK" = "true" ] && echo ""
     echo "Running $CUSTOM_SCRIPT:"
     script_path=""
     case "$CUSTOM_SCRIPT" in
+        # URL: download to /tmp and run from there
         http://*|https://*)
             script_path="/tmp/script.lua"
             if ! curl -fsSL "$CUSTOM_SCRIPT" -o "$script_path"; then
@@ -91,6 +98,7 @@ if [ -n "$CUSTOM_SCRIPT" ]; then
                 exit 1
             fi
             ;;
+        # Local path: resolve relative to cwd or WORK_DIR
         *)
             if [ -f "$CUSTOM_SCRIPT" ]; then
                 script_path="$CUSTOM_SCRIPT"
@@ -114,7 +122,7 @@ if [ -n "$CUSTOM_SCRIPT" ]; then
     fi
 fi
 
-# Exit with failure if either failed
+# --- Exit: fail if luacheck or script failed ---
 if [ $luacheck_exit -ne 0 ] || [ $script_exit -ne 0 ]; then
     exit 1
 fi

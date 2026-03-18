@@ -1,6 +1,6 @@
 # luacheck
 
-A luacheck GitHub Action that runs in Docker with a Lua entry point for custom scripts. luacheck and Lua 5.1 are pre-installed (Alpine + apk), so jobs start immediately.
+A GitHub Action that runs [luacheck](https://luacheck.readthedocs.io/) (a static analyzer for Lua) in Docker. luacheck and Lua 5.1 are pre-installed (Alpine + apk), so jobs start immediately. Optionally runs a custom Lua script after luacheck (e.g. for code generation or additional validation).
 
 ## Usage
 
@@ -13,7 +13,7 @@ jobs:
   luacheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dekallo/luacheck@main
 ```
 
@@ -30,7 +30,7 @@ jobs:
 
 See this repo's [Luacheck workflow](.github/workflows/luacheck.yml) for usage examples (luacheck-only, custom-script-only, and both).
 
-### Luacheck + script that modifies repo
+### Luacheck + custom test/deploy script
 
 ```yaml
       - uses: dekallo/luacheck@main
@@ -39,7 +39,6 @@ See this repo's [Luacheck workflow](.github/workflows/luacheck.yml) for usage ex
           config: https://raw.githubusercontent.com/your-org/config/main/.luacheckrc
           custom_script: scripts/generate_options.lua
           custom_args: module1.toc module2.toc
-          fail_fast: false  # run both even if luacheck fails
 ```
 
 ### Inputs
@@ -51,10 +50,10 @@ See this repo's [Luacheck workflow](.github/workflows/luacheck.yml) for usage ex
 | `args` | `""` | Extra luacheck CLI arguments (see below) |
 | `config` | `""` | URL to custom `.luacheckrc` |
 | `annotate` | `none` | `none`, `warning`, or `error` — show issues as PR annotations (incompatible with `-qq`/`-qqq`) |
-| `custom_script` | `""` | URL or path (relative to `path`, or absolute) to a Lua script to run after luacheck. Runs in the working directory and can modify repo files (e.g., code generation scripts). |
+| `custom_script` | `""` | URL or path (relative to `path`, or absolute) to a Lua script to run after luacheck. Runs in the working directory and can modify repo files (e.g. code generation / tests). |
 | `custom_args` | `"."` | Arguments passed to the custom script |
 | `run_luacheck` | `true` | When false, skip luacheck (script-only mode) |
-| `fail_fast` | `false` | When true, exit on first failure. When false, run both luacheck and the custom script, then exit with failure if any failed. |
+| `fail_fast` | `false` | When true, exit on first failure (luacheck or script). When false, run both and exit with failure if either failed. |
 
 ### Common `args` options
 
@@ -69,19 +68,26 @@ See this repo's [Luacheck workflow](.github/workflows/luacheck.yml) for usage ex
 
 Full reference: [luacheck CLI docs](https://luacheck.readthedocs.io/en/stable/cli.html)
 
+## Repo structure
+
+| Path | Purpose |
+|------|---------|
+| `action.yml` | Composite action definition; runs Docker with env vars |
+| `Dockerfile` | Alpine image with luacheck, Lua 5.1, curl |
+| `entrypoint.sh` | Parses inputs, runs luacheck, runs custom script |
+| `test/` | Fixtures and workflow job examples ([test/README.md](test/README.md)) |
+
 ## Setup
 
 **First-time setup:** Push this repo and let the [build workflow](.github/workflows/build.yml) run. It publishes the image to `ghcr.io/dekallo/luacheck`. After that, the action is ready to use.
 
-If you fork this repo, update the image reference in `action.yml` to your own GHCR path.
+**Forking:** Update the image reference in `action.yml` to your own GHCR path (e.g. `ghcr.io/your-org/luacheck`).
 
 ## Local use
+
+Build and run the container locally (mounts current directory as workspace):
 
 ```bash
 docker build -t luacheck .
 docker run -v "$(pwd):/workspace" luacheck
 ```
-
-## Why Docker?
-
-This action uses a pre-built image — luacheck is already there, so the job starts immediately.
