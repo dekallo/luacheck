@@ -1,13 +1,52 @@
-# Self-test: run luacheck on this repo
+# Self-test: run luacheck and/or test script on this repo
 name: Luacheck
 on: [push, pull_request]
 
 jobs:
   luacheck:
+    name: Luacheck only
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - name: Build and run luacheck
         run: |
           docker build -t luacheck .
-          docker run -v "$PWD:/workspace" -e INPUT_FILES=test -e INPUT_PATH=/workspace -e GITHUB_WORKSPACE=/workspace luacheck
+          docker run --rm -v "$PWD:/workspace" \
+            -e INPUT_FILES=test \
+            -e INPUT_PATH=/workspace \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_RUN_LUACHECK=true \
+            luacheck
+
+  test-script:
+    name: Test script only
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run test script
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e INPUT_PATH=/workspace \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_RUN_LUACHECK=false \
+            -e INPUT_TEST_SCRIPT=test/validate.lua \
+            -e INPUT_TEST_ARGS=. \
+            luacheck
+
+  both:
+    name: Luacheck and test script
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run luacheck + test script
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e INPUT_FILES=test \
+            -e INPUT_PATH=/workspace \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_RUN_LUACHECK=true \
+            -e INPUT_TEST_SCRIPT=test/validate.lua \
+            -e INPUT_TEST_ARGS=. \
+            luacheck

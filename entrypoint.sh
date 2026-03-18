@@ -10,6 +10,9 @@ fi
 ARGS="${INPUT_ARGS:-}"
 CONFIG_URL="${INPUT_CONFIG:-}"
 ANNOTATE="${INPUT_ANNOTATE:-none}"
+TEST_SCRIPT="${INPUT_TEST_SCRIPT:-}"
+TEST_ARGS="${INPUT_TEST_ARGS:-.}"
+RUN_LUACHECK="${INPUT_RUN_LUACHECK:-true}"
 
 # Download custom config if URL provided
 if [ -n "$CONFIG_URL" ]; then
@@ -57,14 +60,51 @@ annotate() {
     esac
 }
 
-# Run luacheck (--no-cache for CI reproducibility)
-output=$(mktemp)
-trap 'rm -f "$output"' EXIT
-set +e
-luacheck --no-cache $ARGS -- $FILES > "$output" 2>&1
-exitcode=$?
-set -e
+# Run luacheck if enabled
+exitcode=0
+if [ "$RUN_LUACHECK" = "true" ]; then
+    output=$(mktemp)
+    trap 'rm -f "$output"' EXIT
+    set +e
+    luacheck --no-cache $ARGS -- $FILES > "$output" 2>&1
+    exitcode=$?
+    set -e
+    annotate < "$output"
+    if [ $exitcode -ne 0 ]; then
+        exit $exitcode
+    fi
+fi
 
-annotate < "$output"
+# Run test script when provided (URL or path)
+if [ -n "$TEST_SCRIPT" ]; then
+    script_path=""
+    case "$TEST_SCRIPT" in
+        http://*|https://*)
+            script_path="/tmp/script.lua"
+            if ! curl -fsSL "$TEST_SCRIPT" -o "$script_path"; then
+                echo "::error::Unable to download script from \"$TEST_SCRIPT\"" >&2
+                exit 1
+            fi
+            ;;
+        *)
+            if [ -f "$TEST_SCRIPT" ]; then
+                script_path="$TEST_SCRIPT"
+            elif [ -f "$WORK_DIR/$TEST_SCRIPT" ]; then
+                script_path="$WORK_DIR/$TEST_SCRIPT"
+            else
+                echo "::error::Test script not found: \"$TEST_SCRIPT\"" >&2
+                exit 1
+            fi
+            ;;
+    esac
+    set +e
+    lua5.1 "$script_path" $TEST_ARGS
+    exitcode=$?
+    set -e
+    if [ $exitcode -ne 0 ]; then
+        echo "::error::Test script failed with exit code $exitcode" >&2
+        exit $exitcode
+    fi
+fi
 
 exit $exitcode

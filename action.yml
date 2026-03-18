@@ -31,6 +31,21 @@ inputs:
       Requires warnings not be suppressed (avoid -qq or -qqq with args).
     required: false
     default: none
+  test_script:
+    description: >
+      URL or path (relative to path, or absolute) to a Lua script to run after luacheck.
+    required: false
+    default: ''
+  test_args:
+    description: >
+      Arguments passed to the test script.
+    required: false
+    default: '.'
+  run_luacheck:
+    description: >
+      When false, skip luacheck (script-only mode).
+    required: false
+    default: true
 
 runs:
   using: composite
@@ -47,6 +62,9 @@ runs:
           -e INPUT_ARGS="${{ inputs.args }}" \
           -e INPUT_CONFIG="${{ inputs.config }}" \
           -e INPUT_ANNOTATE="${{ inputs.annotate }}" \
+          -e INPUT_TEST_SCRIPT="${{ inputs.test_script }}" \
+          -e INPUT_TEST_ARGS="${{ inputs.test_args }}" \
+          -e INPUT_RUN_LUACHECK="${{ inputs.run_luacheck }}" \
           -e GITHUB_WORKSPACE=/workspace \
           ghcr.io/dekallo/luacheck:latest 2>&1)
         exitcode=$?

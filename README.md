@@ -28,6 +28,8 @@ jobs:
           annotate: warning  # or "error" — emits GitHub annotations on PRs
 ```
 
+See this repo's [Luacheck workflow](.github/workflows/luacheck.yml) for usage examples (luacheck-only, test-script-only, and both).
+
 ### Inputs
 
 | Input | Default | Description |
@@ -37,6 +39,9 @@ jobs:
 | `args` | `""` | Extra luacheck CLI arguments (see below) |
 | `config` | `""` | URL to custom `.luacheckrc` |
 | `annotate` | `none` | `none`, `warning`, or `error` — show issues as PR annotations (incompatible with `-qq`/`-qqq`) |
+| `test_script` | `""` | URL or path (relative to `path`, or absolute) to a Lua script to run after luacheck |
+| `test_args` | `"."` | Arguments passed to the test script |
+| `run_luacheck` | `true` | When false, skip luacheck (script-only mode) |
 
 ### Common `args` options
 
