@@ -28,7 +28,7 @@ jobs:
           annotate: warning  # or "error" — emits GitHub annotations on PRs
 ```
 
-See this repo's [Luacheck workflow](.github/workflows/luacheck.yml) for usage examples (luacheck-only, custom-script-only, and both).
+The [Luacheck workflow](.github/workflows/luacheck.yml) self-tests the action; the examples above show how to use it.
 
 ### Luacheck + custom test/deploy script
 

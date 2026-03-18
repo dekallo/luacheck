@@ -1,4 +1,5 @@
-# Self-test: validates different combinations of inputs. Each job serves as a copy-paste example.
+# Self-test: validates input combinations by building and running the container locally.
+# For usage examples (using the published action/image), see the README.
 name: Luacheck
 on: [push, pull_request]
 
