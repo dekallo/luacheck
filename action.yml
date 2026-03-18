@@ -46,6 +46,11 @@ inputs:
       When false, skip luacheck (script-only mode).
     required: false
     default: true
+  fail_fast:
+    description: >
+      When true, exit on first failure (luacheck or script). When false, run both and exit with failure if any failed.
+    required: false
+    default: false
 
 runs:
   using: composite
@@ -65,6 +70,7 @@ runs:
           -e INPUT_TEST_SCRIPT="${{ inputs.test_script }}" \
           -e INPUT_TEST_ARGS="${{ inputs.test_args }}" \
           -e INPUT_RUN_LUACHECK="${{ inputs.run_luacheck }}" \
+          -e INPUT_FAIL_FAST="${{ inputs.fail_fast }}" \
           -e GITHUB_WORKSPACE=/workspace \
           ghcr.io/dekallo/luacheck:latest 2>&1)
         exitcode=$?

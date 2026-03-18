@@ -13,6 +13,7 @@ ANNOTATE="${INPUT_ANNOTATE:-none}"
 TEST_SCRIPT="${INPUT_TEST_SCRIPT:-}"
 TEST_ARGS="${INPUT_TEST_ARGS:-.}"
 RUN_LUACHECK="${INPUT_RUN_LUACHECK:-true}"
+FAIL_FAST="${INPUT_FAIL_FAST:-false}"
 
 # Download custom config if URL provided
 if [ -n "$CONFIG_URL" ]; then
@@ -61,21 +62,22 @@ annotate() {
 }
 
 # Run luacheck if enabled
-exitcode=0
+luacheck_exit=0
 if [ "$RUN_LUACHECK" = "true" ]; then
     output=$(mktemp)
     trap 'rm -f "$output"' EXIT
     set +e
     luacheck --no-cache $ARGS -- $FILES > "$output" 2>&1
-    exitcode=$?
+    luacheck_exit=$?
     set -e
     annotate < "$output"
-    if [ $exitcode -ne 0 ]; then
-        exit $exitcode
+    if [ "$FAIL_FAST" = "true" ] && [ $luacheck_exit -ne 0 ]; then
+        exit $luacheck_exit
     fi
 fi
 
 # Run test script when provided (URL or path)
+script_exit=0
 if [ -n "$TEST_SCRIPT" ]; then
     script_path=""
     case "$TEST_SCRIPT" in
@@ -99,12 +101,18 @@ if [ -n "$TEST_SCRIPT" ]; then
     esac
     set +e
     lua5.1 "$script_path" $TEST_ARGS
-    exitcode=$?
+    script_exit=$?
     set -e
-    if [ $exitcode -ne 0 ]; then
-        echo "::error::$TEST_SCRIPT failed with exit code $exitcode" >&2
-        exit $exitcode
+    if [ $script_exit -ne 0 ]; then
+        echo "::error::$TEST_SCRIPT failed with exit code $script_exit" >&2
+        if [ "$FAIL_FAST" = "true" ]; then
+            exit $script_exit
+        fi
     fi
 fi
 
-exit $exitcode
+# Exit with failure if either failed
+if [ $luacheck_exit -ne 0 ] || [ $script_exit -ne 0 ]; then
+    exit 1
+fi
+exit 0
