@@ -75,13 +75,14 @@ jobs:
       - name: Build and run
         run: |
           docker build -t luacheck .
+          set +e
           docker run --rm -v "$PWD:/workspace" \
             -e GITHUB_WORKSPACE=/workspace \
             -e INPUT_FILES=test/bad.lua \
             -e INPUT_PATH=. \
             -e INPUT_RUN_LUACHECK=true \
             luacheck
-          [ $? -ne 0 ]  # Job passes when container failed
+          [ $? -ne 0 ]
 
   script-fails:
     name: Test script fails (expect fail)
@@ -91,6 +92,7 @@ jobs:
       - name: Build and run
         run: |
           docker build -t luacheck .
+          set +e
           docker run --rm -v "$PWD:/workspace" \
             -e GITHUB_WORKSPACE=/workspace \
             -e INPUT_PATH=. \
@@ -108,6 +110,7 @@ jobs:
       - name: Build and run
         run: |
           docker build -t luacheck .
+          set +e
           docker run --rm -v "$PWD:/workspace" \
             -e GITHUB_WORKSPACE=/workspace \
             -e INPUT_FILES=test/bad.lua \
@@ -127,6 +130,7 @@ jobs:
       - name: Build and run
         run: |
           docker build -t luacheck .
+          set +e
           docker run --rm -v "$PWD:/workspace" \
             -e GITHUB_WORKSPACE=/workspace \
             -e INPUT_FILES=test/sample.lua \
@@ -146,6 +150,7 @@ jobs:
       - name: Build and run
         run: |
           docker build -t luacheck .
+          set +e
           docker run --rm -v "$PWD:/workspace" \
             -e GITHUB_WORKSPACE=/workspace \
             -e INPUT_FILES=test/bad.lua \
@@ -165,6 +170,7 @@ jobs:
       - name: Build and run
         run: |
           docker build -t luacheck .
+          set +e
           docker run --rm -v "$PWD:/workspace" \
             -e GITHUB_WORKSPACE=/workspace \
             -e INPUT_FILES=test/sample.lua \
@@ -292,6 +298,7 @@ jobs:
       - name: Build and run
         run: |
           docker build -t luacheck .
+          set +e
           docker run --rm -v "$PWD:/workspace" \
             -e GITHUB_WORKSPACE=/workspace \
             -e INPUT_FILES=test/bad.lua \
