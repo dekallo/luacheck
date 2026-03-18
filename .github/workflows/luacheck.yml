@@ -1,52 +1,301 @@
-# Self-test: run luacheck and/or test script on this repo
+# Self-test: validates different combinations of inputs. Each job serves as a copy-paste example.
 name: Luacheck
 on: [push, pull_request]
 
 jobs:
-  luacheck:
+  # --- Execution modes ---
+  luacheck-only:
     name: Luacheck only
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Build and run luacheck
+      - name: Build and run
         run: |
           docker build -t luacheck .
           docker run --rm -v "$PWD:/workspace" \
-            -e INPUT_FILES=test \
-            -e INPUT_PATH=/workspace \
             -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_FILES=test/sample.lua \
+            -e INPUT_PATH=. \
             -e INPUT_RUN_LUACHECK=true \
             luacheck
 
-  test-script:
+  script-only:
     name: Test script only
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Build and run test script
+      - name: Build and run
         run: |
           docker build -t luacheck .
           docker run --rm -v "$PWD:/workspace" \
-            -e INPUT_PATH=/workspace \
             -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_PATH=. \
             -e INPUT_RUN_LUACHECK=false \
             -e INPUT_TEST_SCRIPT=test/validate.lua \
             -e INPUT_TEST_ARGS=. \
             luacheck
 
-  both:
-    name: Luacheck and test script
+  both-pass:
+    name: Luacheck and test script (both pass)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Build and run luacheck + test script
+      - name: Build and run
         run: |
           docker build -t luacheck .
           docker run --rm -v "$PWD:/workspace" \
-            -e INPUT_FILES=test \
-            -e INPUT_PATH=/workspace \
             -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_FILES=test/sample.lua \
+            -e INPUT_PATH=. \
             -e INPUT_RUN_LUACHECK=true \
             -e INPUT_TEST_SCRIPT=test/validate.lua \
             -e INPUT_TEST_ARGS=. \
             luacheck
+
+  both-disabled:
+    name: Both disabled (no-op)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_PATH=. \
+            -e INPUT_RUN_LUACHECK=false \
+            luacheck
+
+  # --- Failure modes (expect container to fail; job passes when container fails) ---
+  luacheck-fails:
+    name: Luacheck fails (expect fail)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_FILES=test/bad.lua \
+            -e INPUT_PATH=. \
+            -e INPUT_RUN_LUACHECK=true \
+            luacheck
+          [ $? -ne 0 ]  # Job passes when container failed
+
+  script-fails:
+    name: Test script fails (expect fail)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_PATH=. \
+            -e INPUT_RUN_LUACHECK=false \
+            -e INPUT_TEST_SCRIPT=test/validate.lua \
+            -e INPUT_TEST_ARGS=--fail \
+            luacheck
+          [ $? -ne 0 ]
+
+  fail_fast-luacheck-fails:
+    name: fail_fast=true, luacheck fails (script never runs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_FILES=test/bad.lua \
+            -e INPUT_PATH=. \
+            -e INPUT_RUN_LUACHECK=true \
+            -e INPUT_FAIL_FAST=true \
+            -e INPUT_TEST_SCRIPT=test/validate.lua \
+            -e INPUT_TEST_ARGS=. \
+            luacheck
+          [ $? -ne 0 ]
+
+  fail_fast-script-fails:
+    name: fail_fast=true, script fails
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_FILES=test/sample.lua \
+            -e INPUT_PATH=. \
+            -e INPUT_RUN_LUACHECK=true \
+            -e INPUT_FAIL_FAST=true \
+            -e INPUT_TEST_SCRIPT=test/validate.lua \
+            -e INPUT_TEST_ARGS=--fail \
+            luacheck
+          [ $? -ne 0 ]
+
+  run-both-luacheck-fails:
+    name: fail_fast=false, both run, luacheck fails
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_FILES=test/bad.lua \
+            -e INPUT_PATH=. \
+            -e INPUT_RUN_LUACHECK=true \
+            -e INPUT_FAIL_FAST=false \
+            -e INPUT_TEST_SCRIPT=test/validate.lua \
+            -e INPUT_TEST_ARGS=. \
+            luacheck
+          [ $? -ne 0 ]
+
+  run-both-script-fails:
+    name: fail_fast=false, both run, script fails
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_FILES=test/sample.lua \
+            -e INPUT_PATH=. \
+            -e INPUT_RUN_LUACHECK=true \
+            -e INPUT_FAIL_FAST=false \
+            -e INPUT_TEST_SCRIPT=test/validate.lua \
+            -e INPUT_TEST_ARGS=--fail \
+            luacheck
+          [ $? -ne 0 ]
+
+  # --- Input variations ---
+  config-url:
+    name: Config from URL
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_FILES=test/sample.lua \
+            -e INPUT_PATH=. \
+            -e INPUT_CONFIG="https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/test/luacheckrc.minimal" \
+            luacheck
+
+  args-quiet:
+    name: Luacheck args (-q)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_FILES=test/sample.lua \
+            -e INPUT_PATH=. \
+            -e INPUT_ARGS=-q \
+            luacheck
+
+  script-from-url:
+    name: Test script from URL
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_PATH=. \
+            -e INPUT_RUN_LUACHECK=false \
+            -e INPUT_TEST_SCRIPT="https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/test/validate.lua" \
+            -e INPUT_TEST_ARGS=. \
+            luacheck
+
+  script-args:
+    name: Test script with multiple args
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_PATH=. \
+            -e INPUT_RUN_LUACHECK=false \
+            -e INPUT_TEST_SCRIPT=test/validate.lua \
+            -e 'INPUT_TEST_ARGS=--echo foo bar' \
+            luacheck
+
+  script-writes-repo:
+    name: Script modifies repo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_PATH=. \
+            -e INPUT_RUN_LUACHECK=false \
+            -e INPUT_TEST_SCRIPT=test/write.lua \
+            luacheck
+      - name: Verify script wrote file
+        run: test -f test/.written-by-script
+
+  path-subdir:
+    name: Path subdirectory
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_PATH=test \
+            -e INPUT_FILES=sample.lua \
+            luacheck
+
+  files-specific:
+    name: Specific file
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_FILES=test/sample.lua \
+            -e INPUT_PATH=. \
+            luacheck
+
+  annotate-warning:
+    name: Annotate warnings
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build and run
+        run: |
+          docker build -t luacheck .
+          docker run --rm -v "$PWD:/workspace" \
+            -e GITHUB_WORKSPACE=/workspace \
+            -e INPUT_FILES=test/bad.lua \
+            -e INPUT_PATH=. \
+            -e INPUT_ANNOTATE=warning \
+            luacheck
+          [ $? -ne 0 ]
