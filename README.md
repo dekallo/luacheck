@@ -1,6 +1,6 @@
 # luacheck
 
-A luacheck GitHub Action that runs in Docker. **No setup, instant run** — luacheck is pre-installed (Alpine + apk), so jobs start immediately. Self-contained, no external image dependencies.
+A luacheck GitHub Action that runs in Docker with a Lua entry point for custom scripts. luacheck and Lua 5.1 are pre-installed (Alpine + apk), so jobs start immediately.
 
 ## Usage
 
@@ -28,7 +28,7 @@ jobs:
           annotate: warning  # or "error" — emits GitHub annotations on PRs
 ```
 
-See this repo's [Luacheck workflow](.github/workflows/luacheck.yml) for usage examples (luacheck-only, test-script-only, and both).
+See this repo's [Luacheck workflow](.github/workflows/luacheck.yml) for usage examples (luacheck-only, custom-script-only, and both).
 
 ### Luacheck + script that modifies repo
 
@@ -37,8 +37,8 @@ See this repo's [Luacheck workflow](.github/workflows/luacheck.yml) for usage ex
         with:
           args: -q
           config: https://raw.githubusercontent.com/your-org/config/main/.luacheckrc
-          test_script: scripts/generate_options.lua
-          test_args: module1.toc module2.toc
+          custom_script: scripts/generate_options.lua
+          custom_args: module1.toc module2.toc
           fail_fast: false  # run both even if luacheck fails
 ```
 
@@ -51,10 +51,10 @@ See this repo's [Luacheck workflow](.github/workflows/luacheck.yml) for usage ex
 | `args` | `""` | Extra luacheck CLI arguments (see below) |
 | `config` | `""` | URL to custom `.luacheckrc` |
 | `annotate` | `none` | `none`, `warning`, or `error` — show issues as PR annotations (incompatible with `-qq`/`-qqq`) |
-| `test_script` | `""` | URL or path (relative to `path`, or absolute) to a Lua script to run after luacheck. Runs in the working directory and can modify repo files (e.g., code generation scripts). |
-| `test_args` | `"."` | Arguments passed to the test script |
+| `custom_script` | `""` | URL or path (relative to `path`, or absolute) to a Lua script to run after luacheck. Runs in the working directory and can modify repo files (e.g., code generation scripts). |
+| `custom_args` | `"."` | Arguments passed to the custom script |
 | `run_luacheck` | `true` | When false, skip luacheck (script-only mode) |
-| `fail_fast` | `false` | When true, exit on first failure. When false, run both luacheck and script, then exit with failure if any failed. |
+| `fail_fast` | `false` | When true, exit on first failure. When false, run both luacheck and the custom script, then exit with failure if any failed. |
 
 ### Common `args` options
 

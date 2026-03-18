@@ -35,7 +35,7 @@ Fixtures used by the [Luacheck workflow](../.github/workflows/luacheck.yml). Eac
 - **config-url** — Config from raw GitHub URL
 - **args-quiet** — Luacheck `-q`
 - **script-from-url** — Script from raw GitHub URL
-- **script-args** — Multiple `test_args` (`--echo foo bar`)
+- **script-args** — Multiple `custom_args` (`--echo foo bar`)
 - **script-writes-repo** — Script writes file, verify with `test -f`
 - **path-subdir** — `path: test`
 - **files-specific** — `files: test/sample.lua`

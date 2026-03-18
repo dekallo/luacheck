@@ -20,7 +20,7 @@ jobs:
             luacheck
 
   script-only:
-    name: Test script only
+    name: Custom script only
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -31,12 +31,12 @@ jobs:
             -e GITHUB_WORKSPACE=/workspace \
             -e INPUT_PATH=. \
             -e INPUT_RUN_LUACHECK=false \
-            -e INPUT_TEST_SCRIPT=test/validate.lua \
-            -e INPUT_TEST_ARGS=. \
+            -e INPUT_CUSTOM_SCRIPT=test/validate.lua \
+            -e INPUT_CUSTOM_ARGS=. \
             luacheck
 
   both-pass:
-    name: Luacheck and test script (both pass)
+    name: Luacheck and custom script (both pass)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -48,8 +48,8 @@ jobs:
             -e INPUT_FILES=test/sample.lua \
             -e INPUT_PATH=. \
             -e INPUT_RUN_LUACHECK=true \
-            -e INPUT_TEST_SCRIPT=test/validate.lua \
-            -e INPUT_TEST_ARGS=. \
+            -e INPUT_CUSTOM_SCRIPT=test/validate.lua \
+            -e INPUT_CUSTOM_ARGS=. \
             luacheck
 
   both-disabled:
@@ -85,7 +85,7 @@ jobs:
           [ $? -ne 0 ]
 
   script-fails:
-    name: Test script fails (expect fail)
+    name: Custom script fails (expect fail)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -97,8 +97,8 @@ jobs:
             -e GITHUB_WORKSPACE=/workspace \
             -e INPUT_PATH=. \
             -e INPUT_RUN_LUACHECK=false \
-            -e INPUT_TEST_SCRIPT=test/validate.lua \
-            -e INPUT_TEST_ARGS=--fail \
+            -e INPUT_CUSTOM_SCRIPT=test/validate.lua \
+            -e INPUT_CUSTOM_ARGS=--fail \
             luacheck
           [ $? -ne 0 ]
 
@@ -117,8 +117,8 @@ jobs:
             -e INPUT_PATH=. \
             -e INPUT_RUN_LUACHECK=true \
             -e INPUT_FAIL_FAST=true \
-            -e INPUT_TEST_SCRIPT=test/validate.lua \
-            -e INPUT_TEST_ARGS=. \
+            -e INPUT_CUSTOM_SCRIPT=test/validate.lua \
+            -e INPUT_CUSTOM_ARGS=. \
             luacheck
           [ $? -ne 0 ]
 
@@ -137,8 +137,8 @@ jobs:
             -e INPUT_PATH=. \
             -e INPUT_RUN_LUACHECK=true \
             -e INPUT_FAIL_FAST=true \
-            -e INPUT_TEST_SCRIPT=test/validate.lua \
-            -e INPUT_TEST_ARGS=--fail \
+            -e INPUT_CUSTOM_SCRIPT=test/validate.lua \
+            -e INPUT_CUSTOM_ARGS=--fail \
             luacheck
           [ $? -ne 0 ]
 
@@ -157,8 +157,8 @@ jobs:
             -e INPUT_PATH=. \
             -e INPUT_RUN_LUACHECK=true \
             -e INPUT_FAIL_FAST=false \
-            -e INPUT_TEST_SCRIPT=test/validate.lua \
-            -e INPUT_TEST_ARGS=. \
+            -e INPUT_CUSTOM_SCRIPT=test/validate.lua \
+            -e INPUT_CUSTOM_ARGS=. \
             luacheck
           [ $? -ne 0 ]
 
@@ -177,8 +177,8 @@ jobs:
             -e INPUT_PATH=. \
             -e INPUT_RUN_LUACHECK=true \
             -e INPUT_FAIL_FAST=false \
-            -e INPUT_TEST_SCRIPT=test/validate.lua \
-            -e INPUT_TEST_ARGS=--fail \
+            -e INPUT_CUSTOM_SCRIPT=test/validate.lua \
+            -e INPUT_CUSTOM_ARGS=--fail \
             luacheck
           [ $? -ne 0 ]
 
@@ -214,7 +214,7 @@ jobs:
             luacheck
 
   script-from-url:
-    name: Test script from URL
+    name: Custom script from URL
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -225,12 +225,12 @@ jobs:
             -e GITHUB_WORKSPACE=/workspace \
             -e INPUT_PATH=. \
             -e INPUT_RUN_LUACHECK=false \
-            -e INPUT_TEST_SCRIPT="https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/test/validate.lua" \
-            -e INPUT_TEST_ARGS=. \
+            -e INPUT_CUSTOM_SCRIPT="https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/test/validate.lua" \
+            -e INPUT_CUSTOM_ARGS=. \
             luacheck
 
   script-args:
-    name: Test script with multiple args
+    name: Custom script with multiple args
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -241,8 +241,8 @@ jobs:
             -e GITHUB_WORKSPACE=/workspace \
             -e INPUT_PATH=. \
             -e INPUT_RUN_LUACHECK=false \
-            -e INPUT_TEST_SCRIPT=test/validate.lua \
-            -e 'INPUT_TEST_ARGS=--echo foo bar' \
+            -e INPUT_CUSTOM_SCRIPT=test/validate.lua \
+            -e 'INPUT_CUSTOM_ARGS=--echo foo bar' \
             luacheck
 
   script-writes-repo:
@@ -257,7 +257,7 @@ jobs:
             -e GITHUB_WORKSPACE=/workspace \
             -e INPUT_PATH=. \
             -e INPUT_RUN_LUACHECK=false \
-            -e INPUT_TEST_SCRIPT=test/write.lua \
+            -e INPUT_CUSTOM_SCRIPT=test/write.lua \
             luacheck
       - name: Verify script wrote file
         run: test -f test/.written-by-script
