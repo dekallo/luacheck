@@ -102,7 +102,7 @@ if [ -n "$TEST_SCRIPT" ]; then
     exitcode=$?
     set -e
     if [ $exitcode -ne 0 ]; then
-        echo "::error::Test script failed with exit code $exitcode" >&2
+        echo "::error::$TEST_SCRIPT failed with exit code $exitcode" >&2
         exit $exitcode
     fi
 fi
