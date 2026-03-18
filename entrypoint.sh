@@ -64,6 +64,7 @@ annotate() {
 # Run luacheck if enabled
 luacheck_exit=0
 if [ "$RUN_LUACHECK" = "true" ]; then
+    echo "--- Luacheck ---"
     output=$(mktemp)
     trap 'rm -f "$output"' EXIT
     set +e
@@ -79,6 +80,8 @@ fi
 # Run custom script when provided (URL or path)
 script_exit=0
 if [ -n "$CUSTOM_SCRIPT" ]; then
+    [ "$RUN_LUACHECK" = "true" ] && echo ""
+    echo "--- Custom script: $CUSTOM_SCRIPT ---"
     script_path=""
     case "$CUSTOM_SCRIPT" in
         http://*|https://*)
