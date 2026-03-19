@@ -37,7 +37,8 @@ jobs:
       image: ghcr.io/${{ github.repository }}:test-${{ github.sha }}
     steps:
       - uses: actions/checkout@v6
-      - uses: ./
+      - name: Run luacheck action (job mode)
+        uses: ./
         with:
           files: test/sample.lua
           args: -q
