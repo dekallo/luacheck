@@ -62,7 +62,7 @@ runs:
         else
           echo "mode=host" >> "$GITHUB_OUTPUT"
         fi
-      shell: bash
+      shell: sh
 
     # --- Job mode: multiple steps ---
     - id: luacheck
