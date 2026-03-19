@@ -55,7 +55,52 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Run luacheck
+    - id: detect
+      run: |
+        if [ -x /entrypoint.sh ]; then
+          echo "mode=job" >> "$GITHUB_OUTPUT"
+        else
+          echo "mode=host" >> "$GITHUB_OUTPUT"
+        fi
+      shell: bash
+
+    # --- Job mode: multiple steps ---
+    - id: luacheck
+      name: Run luacheck
+      if: steps.detect.outputs.mode == 'job' && inputs.run_luacheck == 'true'
+      env:
+        INPUT_FILES: ${{ inputs.files }}
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_ARGS: ${{ inputs.args }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_ANNOTATE: ${{ inputs.annotate }}
+        INPUT_CUSTOM_SCRIPT: ${{ inputs.custom_script }}
+        INPUT_CUSTOM_ARGS: ${{ inputs.custom_args }}
+        INPUT_RUN_LUACHECK: ${{ inputs.run_luacheck }}
+        INPUT_FAIL_FAST: ${{ inputs.fail_fast }}
+      run: /entrypoint.sh luacheck
+      shell: sh
+
+    - id: script
+      name: Run custom script
+      if: always() && steps.detect.outputs.mode == 'job' && inputs.custom_script != '' && (inputs.fail_fast != 'true' || steps.luacheck.outcome == 'success' || steps.luacheck.outcome == 'skipped')
+      env:
+        INPUT_FILES: ${{ inputs.files }}
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_ARGS: ${{ inputs.args }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_ANNOTATE: ${{ inputs.annotate }}
+        INPUT_CUSTOM_SCRIPT: ${{ inputs.custom_script }}
+        INPUT_CUSTOM_ARGS: ${{ inputs.custom_args }}
+        INPUT_RUN_LUACHECK: ${{ inputs.run_luacheck }}
+        INPUT_FAIL_FAST: ${{ inputs.fail_fast }}
+      run: /entrypoint.sh script
+      shell: sh
+
+    # --- Host mode: single step ---
+    - id: host
+      if: steps.detect.outputs.mode == 'host'
+      name: Run luacheck
       run: |
         docker pull -q ghcr.io/dekallo/luacheck:latest >/dev/null 2>&1
         set +e

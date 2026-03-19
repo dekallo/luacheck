@@ -4,6 +4,34 @@ A GitHub Action that runs [luacheck](https://luacheck.readthedocs.io/) (a static
 
 ## Usage
 
+Same config for both modes; the action auto-detects. **Job mode** (recommended) yields separate steps in the Actions UI; **host mode** runs everything in one step.
+
+### Job mode (recommended)
+
+By defining `container:` the action runs inside the docker environment.
+
+```yaml
+# .github/workflows/luacheck.yml
+name: Luacheck
+on: [push, pull_request]
+
+jobs:
+  luacheck:
+    runs-on: ubuntu-latest
+    container: ghcr.io/dekallo/luacheck:latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dekallo/luacheck@main
+        with:
+          files: src lib
+          args: -q
+          custom_script: scripts/validate.lua
+```
+
+### Host mode
+
+Action runs entirely on the host in a single step.
+
 ```yaml
 # .github/workflows/luacheck.yml
 name: Luacheck
@@ -15,6 +43,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: dekallo/luacheck@main
+        with:
+          files: src lib
+          args: -q
+          custom_script: scripts/validate.lua
 ```
 
 ### With options
@@ -43,39 +75,49 @@ The [Luacheck workflow](.github/workflows/luacheck.yml) self-tests the action; t
 
 ### Inputs
 
-| Input | Default | Description |
-|-------|---------|-------------|
-| `files` | `.` | Files, rockspecs, or directories to check |
-| `path` | `.` | Working directory (relative to workspace) |
-| `args` | `""` | Extra luacheck CLI arguments (see below) |
-| `config` | `""` | URL to custom `.luacheckrc` |
-| `annotate` | `none` | `none`, `warning`, or `error` — show issues as PR annotations (incompatible with `-qq`/`-qqq`) |
-| `custom_script` | `""` | URL or path (relative to `path`, or absolute) to a Lua script to run after luacheck. Runs in the working directory and can modify repo files (e.g. code generation / tests). |
-| `custom_args` | `"."` | Arguments passed to the custom script |
-| `run_luacheck` | `true` | When false, skip luacheck (script-only mode) |
-| `fail_fast` | `false` | When true, exit on first failure (luacheck or script). When false, run both and exit with failure if either failed. |
+
+| Input           | Default | Description                                                                                                                                                                  |
+| --------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `files`         | `.`     | Files, rockspecs, or directories to check                                                                                                                                    |
+| `path`          | `.`     | Working directory (relative to workspace)                                                                                                                                    |
+| `args`          | `""`    | Extra luacheck CLI arguments (see below)                                                                                                                                     |
+| `config`        | `""`    | URL to custom `.luacheckrc`                                                                                                                                                  |
+| `annotate`      | `none`  | `none`, `warning`, or `error` — show issues as PR annotations (incompatible with `-qq`/`-qqq`)                                                                               |
+| `custom_script` | `""`    | URL or path (relative to `path`, or absolute) to a Lua script to run after luacheck. Runs in the working directory and can modify repo files (e.g. code generation / tests). |
+| `custom_args`   | `"."`   | Arguments passed to the custom script                                                                                                                                        |
+| `run_luacheck`  | `true`  | When false, skip luacheck (script-only mode)                                                                                                                                 |
+| `fail_fast`     | `false` | When true, exit on first failure (luacheck or script). When false, run both and exit with failure if either failed.                                                          |
+
 
 ### Common `args` options
 
-| Arg | Description |
-|-----|-------------|
-| `-q` | Suppress output for files with no issues |
-| `-qq` | Suppress warning output (summary only) |
-| `-qqq` | Summary line only |
-| `--codes` | Show warning/error codes (e.g. `W211`) |
-| `--ranges` | Show column ranges for issues |
+
+| Arg          | Description                              |
+| ------------ | ---------------------------------------- |
+| `-q`         | Suppress output for files with no issues |
+| `-qq`        | Suppress warning output (summary only)   |
+| `-qqq`       | Summary line only                        |
+| `--codes`    | Show warning/error codes (e.g. `W211`)   |
+| `--ranges`   | Show column ranges for issues            |
 | `--no-cache` | Disable cache (action already uses this) |
+
 
 Full reference: [luacheck CLI docs](https://luacheck.readthedocs.io/en/stable/cli.html)
 
+### File modifications
+
+Scripts can read/write repo files; no extra bind mounts needed. GitHub mounts the workspace in job mode; the action mounts it in host mode.
+
 ## Repo structure
 
-| Path | Purpose |
-|------|---------|
-| `action.yml` | Composite action definition; runs Docker with env vars |
-| `Dockerfile` | Alpine image with luacheck, Lua 5.1, curl |
-| `entrypoint.sh` | Parses inputs, runs luacheck, runs custom script |
-| `test/` | Fixtures and workflow job examples ([test/README.md](test/README.md)) |
+
+| Path            | Purpose                                                                               |
+| --------------- | ------------------------------------------------------------------------------------- |
+| `action.yml`    | Composite action; detects job vs host mode, runs steps accordingly                    |
+| `Dockerfile`    | Alpine image with luacheck, Lua 5.1, curl                                             |
+| `entrypoint.sh` | Parses inputs, runs luacheck and/or custom script (supports subcommands for job mode) |
+| `test/`         | Fixtures and workflow job examples ([test/README.md](test/README.md))                 |
+
 
 ## Setup
 
