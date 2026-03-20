@@ -166,13 +166,16 @@ jobs:
       - name: Build and run
         run: |
           docker build -t luacheck .
-          SUMMARY=$(mktemp)
+          # Summary file must live under the workspace mount (not mktemp under /tmp) so every
+          # Docker host can write reliably; a separate bind for /tmp paths is brittle.
+          SUMMARY_PATH="$PWD/.ci-step-summary.md"
+          rm -f "$SUMMARY_PATH"
+          touch "$SUMMARY_PATH"
           set +e
           out=$(docker run --rm \
             -v "$PWD:/workspace" \
-            -v "$SUMMARY:$SUMMARY" \
             -e GITHUB_WORKSPACE=/workspace \
-            -e GITHUB_STEP_SUMMARY="$SUMMARY" \
+            -e GITHUB_STEP_SUMMARY=/workspace/.ci-step-summary.md \
             -e INPUT_FILES=test/bad.lua \
             -e INPUT_PATH=. \
             -e INPUT_RUN_LUACHECK=true \
@@ -185,8 +188,12 @@ jobs:
           printf '%s\n' "$out"
           [ "$code" -ne 0 ]
           echo "$out" | grep -q 'Validation passed'  # script must run after luacheck failure
-          grep -q '### Checks' "$SUMMARY"
-          grep -q 'Luacheck' "$SUMMARY" && grep -q 'failed' "$SUMMARY"
+          [ -s "$SUMMARY_PATH" ]
+          grep -q '### Checks' "$SUMMARY_PATH"
+          grep -q '#cf222e' "$SUMMARY_PATH"   # failed-state span (Luacheck)
+          grep -q '<pre>' "$SUMMARY_PATH"   # luacheck output on failure
+          grep -q '#1a7f37' "$SUMMARY_PATH"  # validate.lua passed
+          rm -f "$SUMMARY_PATH"
 
   run-both-script-fails:
     name: fail_fast=false, both run, script fails

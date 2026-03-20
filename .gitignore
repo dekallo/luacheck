@@ -1,2 +1,3 @@
 .DS_Store
 test/.written-by-script
+.ci-step-summary.md
