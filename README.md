@@ -60,7 +60,7 @@ Set **`job_summary: true`** to append a short summary to the workflow **Summary*
 | `custom_args`   | `"."`   | Arguments passed to the custom script                                                                                                                                        |
 | `run_luacheck`  | `true`  | Set `false` to run only the custom script                                                                                                                                  |
 | `fail_fast`     | `false` | If true, stop after the first failing step; if false, run luacheck and script (if set) and fail if either failed                                                             |
-| `job_summary`   | `false` | Markdown summary on the workflow Summary tab                                                                                                                                 |
+| `job_summary`   | `false` | Markdown summary on the workflow Summary tab; includes command output when a step fails                                                                                                                                 |
 
 ### Common `args` options
 

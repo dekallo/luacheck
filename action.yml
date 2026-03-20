@@ -54,6 +54,7 @@ inputs:
   job_summary:
     description: >
       When true, append a Markdown summary to the workflow run Summary tab (GITHUB_STEP_SUMMARY).
+      On failure, includes captured luacheck or custom-script output in the summary.
     required: false
     default: false
 

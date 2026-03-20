@@ -23,6 +23,16 @@ luacheck_exit=0
 script_exit=0
 # Set to 1 when fail_fast exits after luacheck so summary does not show script as "passed".
 EARLY_EXIT_NO_SCRIPT=0
+# Temp files with command output for the job summary (removed on exit).
+LUACHECK_OUTPUT_FILE=
+SCRIPT_OUTPUT_FILE=
+
+trap 'rm -f "$LUACHECK_OUTPUT_FILE" "$SCRIPT_OUTPUT_FILE"' EXIT
+
+# Escape minimal HTML for safe <pre> in the job summary.
+summary_pre_body() {
+    sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' < "$1"
+}
 
 # --- Append Markdown to the workflow run summary (when available) ---
 # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#adding-a-job-summary
@@ -34,35 +44,41 @@ write_job_summary() {
         return 0
     fi
     {
-        echo "## luacheck"
-        echo ""
+        if [ "$RUN_LUACHECK" != "true" ] && [ -z "$CUSTOM_SCRIPT" ]; then
+            return 0
+        fi
         if [ "$RUN_LUACHECK" = "true" ]; then
-            echo "### Luacheck"
             if [ "$luacheck_exit" -eq 0 ]; then
-                echo "**Result:** passed (exit 0)"
+                echo "**Luacheck** — <span style=\"color:#1a7f37;font-weight:600\">passed</span>"
             else
-                echo "**Result:** failed (exit $luacheck_exit)"
+                echo "**Luacheck** — <span style=\"color:#cf222e;font-weight:600\">failed</span>"
+                if [ -n "$LUACHECK_OUTPUT_FILE" ] && [ -s "$LUACHECK_OUTPUT_FILE" ]; then
+                    echo "<pre>"
+                    summary_pre_body "$LUACHECK_OUTPUT_FILE"
+                    echo "</pre>"
+                fi
             fi
-            echo ""
-        else
-            echo "### Luacheck"
-            echo "_Skipped (\`run_luacheck: false\`)._"
-            echo ""
         fi
         if [ -n "$CUSTOM_SCRIPT" ]; then
-            echo "### Custom script"
-            echo "Script: \`$CUSTOM_SCRIPT\`"
+            [ "$RUN_LUACHECK" = "true" ] && echo ""
+            # Show basename for a shorter label when path is long.
+            script_label="$CUSTOM_SCRIPT"
+            case "$CUSTOM_SCRIPT" in
+                */*) script_label=$(basename "$CUSTOM_SCRIPT") ;;
+            esac
             if [ "$EARLY_EXIT_NO_SCRIPT" -eq 1 ]; then
-                echo "_Not run (fail_fast after luacheck failed)._"
+                echo "**$script_label** — <span style=\"color:#656d76;font-style:italic\">skipped (fail-fast)</span>"
             elif [ "$script_exit" -eq 0 ]; then
-                echo "**Result:** passed (exit 0)"
+                echo "**$script_label** — <span style=\"color:#1a7f37;font-weight:600\">passed</span>"
             else
-                echo "**Result:** failed (exit $script_exit)"
+                echo "**$script_label** — <span style=\"color:#cf222e;font-weight:600\">failed</span>"
+                if [ -n "$SCRIPT_OUTPUT_FILE" ] && [ -s "$SCRIPT_OUTPUT_FILE" ]; then
+                    echo "<pre>"
+                    summary_pre_body "$SCRIPT_OUTPUT_FILE"
+                    echo "</pre>"
+                fi
             fi
-            echo ""
         fi
-        echo "---"
-        echo "_Expand the step log for full output._"
     } >> "$GITHUB_STEP_SUMMARY" || true
 }
 
@@ -116,13 +132,12 @@ run_luacheck() {
     luacheck_exit=0
     if [ "$RUN_LUACHECK" = "true" ]; then
         echo "Running luacheck:"
-        output=$(mktemp)
-        trap 'rm -f "$output"' EXIT
+        LUACHECK_OUTPUT_FILE=$(mktemp)
         set +e
-        luacheck --no-cache $ARGS -- $FILES > "$output" 2>&1
+        luacheck --no-cache $ARGS -- $FILES > "$LUACHECK_OUTPUT_FILE" 2>&1
         luacheck_exit=$?
         set -e
-        annotate < "$output"
+        annotate < "$LUACHECK_OUTPUT_FILE"
     fi
     return $luacheck_exit
 }
@@ -153,10 +168,12 @@ run_custom_script() {
                 fi
                 ;;
         esac
+        SCRIPT_OUTPUT_FILE=$(mktemp)
         set +e
-        lua5.1 "$script_path" $CUSTOM_ARGS
+        lua5.1 "$script_path" $CUSTOM_ARGS > "$SCRIPT_OUTPUT_FILE" 2>&1
         script_exit=$?
         set -e
+        cat "$SCRIPT_OUTPUT_FILE"
         if [ $script_exit -ne 0 ]; then
             echo "::error::$CUSTOM_SCRIPT failed with exit code $script_exit" >&2
         fi
