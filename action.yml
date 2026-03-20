@@ -1,5 +1,5 @@
 name: luacheck
-description: Runs luacheck in a pre-built Docker container. Optionally runs a custom Lua script (from URL or path) after or instead of luacheck.
+description: Runs luacheck in Docker. Optionally runs a custom Lua script (from URL or path) after or instead of luacheck.
 branding:
   icon: check-square
   color: yellow
@@ -58,5 +58,36 @@ inputs:
     default: false
 
 runs:
-  using: docker
-  image: docker://ghcr.io/dekallo/luacheck:latest
+  using: composite
+  steps:
+    - name: Run luacheck
+      shell: bash
+      run: |
+        docker pull -q ghcr.io/dekallo/luacheck:latest
+
+        EXTRA=()
+        if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+          EXTRA+=(-v "${GITHUB_STEP_SUMMARY}:${GITHUB_STEP_SUMMARY}")
+          EXTRA+=(-e GITHUB_STEP_SUMMARY)
+        fi
+
+        set +e
+        output=$(docker run --rm \
+          "${EXTRA[@]}" \
+          -v "${{ github.workspace }}:/workspace" \
+          -w /workspace \
+          -e INPUT_FILES="${{ inputs.files }}" \
+          -e INPUT_PATH="${{ inputs.path }}" \
+          -e INPUT_ARGS="${{ inputs.args }}" \
+          -e INPUT_CONFIG="${{ inputs.config }}" \
+          -e INPUT_ANNOTATE="${{ inputs.annotate }}" \
+          -e INPUT_CUSTOM_SCRIPT="${{ inputs.custom_script }}" \
+          -e INPUT_CUSTOM_ARGS="${{ inputs.custom_args }}" \
+          -e INPUT_RUN_LUACHECK="${{ inputs.run_luacheck }}" \
+          -e INPUT_FAIL_FAST="${{ inputs.fail_fast }}" \
+          -e INPUT_JOB_SUMMARY="${{ inputs.job_summary }}" \
+          -e GITHUB_WORKSPACE=/workspace \
+          ghcr.io/dekallo/luacheck:latest 2>&1)
+        exitcode=$?
+        echo "$output"
+        exit "$exitcode"

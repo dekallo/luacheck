@@ -1,6 +1,6 @@
 # luacheck
 
-A Docker action that runs [luacheck](https://luacheck.readthedocs.io/) with Lua 5.1. Optionally runs a custom Lua script after luacheck.
+Composite action that runs [luacheck](https://luacheck.readthedocs.io/) with Lua 5.1 in Docker. Optionally runs a custom Lua script after luacheck.
 
 ## Usage
 
@@ -83,7 +83,7 @@ Custom scripts run with the workspace mounted; they can read/write repo files.
 
 | Path            | Purpose                                                                               |
 | --------------- | ------------------------------------------------------------------------------------- |
-| `action.yml`    | Docker action (`docker://ghcr.io/dekallo/luacheck:latest`)                            |
+| `action.yml`    | Composite action: `docker run` the image with workspace + inputs                      |
 | `Dockerfile`    | Alpine image with luacheck, Lua 5.1, curl                                             |
 | `entrypoint.sh` | Luacheck and/or custom script; optional `job_summary` |
 | `test/`         | Fixtures and workflow job examples ([test/README.md](test/README.md))                 |
@@ -94,7 +94,7 @@ The [Luacheck workflow](.github/workflows/luacheck.yml) self-tests the action.
 
 Push the repo and run [.github/workflows/build.yml](.github/workflows/build.yml) to publish `ghcr.io/dekallo/luacheck`.
 
-Forks: point `image` in `action.yml` at your registry (e.g. `docker://ghcr.io/your-org/your-repo:latest`).
+Forks: change the image in `action.yml` (the `docker pull` / `docker run` lines) if you publish elsewhere.
 
 ## Local use
 

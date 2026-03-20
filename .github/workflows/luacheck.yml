@@ -4,9 +4,9 @@ name: Luacheck
 on: [push, pull_request]
 
 jobs:
-  # Root Docker action (matches consumer usage); job_summary enabled for this test.
+  # Root action (matches consumer usage); job_summary enabled for this test.
   docker-action-root:
-    name: Docker action (root action.yml)
+    name: Action (root action.yml)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
