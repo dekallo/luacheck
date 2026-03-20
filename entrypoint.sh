@@ -21,7 +21,7 @@ JOB_SUMMARY="${INPUT_JOB_SUMMARY:-false}"
 
 luacheck_exit=0
 script_exit=0
-# Set to 1 when fail_fast exits after luacheck so summary does not show script as "passed".
+# Set to 1 when fail_fast exits after luacheck so summary does not show script as "pass".
 EARLY_EXIT_NO_SCRIPT=0
 # Temp files with command output for the job summary (removed on exit).
 LUACHECK_OUTPUT_FILE=
@@ -29,9 +29,15 @@ SCRIPT_OUTPUT_FILE=
 
 trap 'rm -f "$LUACHECK_OUTPUT_FILE" "$SCRIPT_OUTPUT_FILE"' EXIT
 
+# Strip ANSI for job-summary <pre> only (GitHub HTML); logs keep luacheck’s terminal colors.
+strip_ansi() {
+    _esc=$(printf '\033')
+    sed "s/${_esc}\\[[0-9;?]*[a-zA-Z]//g" | sed 's/\[[0-9;]*m//g' | tr -d '\015'
+}
+
 # Escape minimal HTML for safe <pre> in the job summary.
 summary_pre_body() {
-    sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' < "$1"
+    strip_ansi < "$1" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'
 }
 
 # --- Append Markdown to the workflow run summary (when available) ---
@@ -49,9 +55,9 @@ write_job_summary() {
         fi
         if [ "$RUN_LUACHECK" = "true" ]; then
             if [ "$luacheck_exit" -eq 0 ]; then
-                echo "**Luacheck** — <span style=\"color:#1a7f37;font-weight:600\">passed</span>"
+                echo "**Luacheck** - **pass**"
             else
-                echo "**Luacheck** — <span style=\"color:#cf222e;font-weight:600\">failed</span>"
+                echo "**Luacheck** - **fail**"
                 if [ -n "$LUACHECK_OUTPUT_FILE" ] && [ -s "$LUACHECK_OUTPUT_FILE" ]; then
                     echo "<pre>"
                     summary_pre_body "$LUACHECK_OUTPUT_FILE"
@@ -67,11 +73,11 @@ write_job_summary() {
                 */*) script_label=$(basename "$CUSTOM_SCRIPT") ;;
             esac
             if [ "$EARLY_EXIT_NO_SCRIPT" -eq 1 ]; then
-                echo "**$script_label** — <span style=\"color:#656d76;font-style:italic\">skipped (fail-fast)</span>"
+                echo "**$script_label** - *skip (fail-fast)*"
             elif [ "$script_exit" -eq 0 ]; then
-                echo "**$script_label** — <span style=\"color:#1a7f37;font-weight:600\">passed</span>"
+                echo "**$script_label** - **pass**"
             else
-                echo "**$script_label** — <span style=\"color:#cf222e;font-weight:600\">failed</span>"
+                echo "**$script_label** - **fail**"
                 if [ -n "$SCRIPT_OUTPUT_FILE" ] && [ -s "$SCRIPT_OUTPUT_FILE" ]; then
                     echo "<pre>"
                     summary_pre_body "$SCRIPT_OUTPUT_FILE"

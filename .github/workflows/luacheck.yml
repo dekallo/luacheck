@@ -190,9 +190,9 @@ jobs:
           echo "$out" | grep -q 'Validation passed'  # script must run after luacheck failure
           [ -s "$SUMMARY_PATH" ]
           grep -q '### Checks' "$SUMMARY_PATH"
-          grep -q '#cf222e' "$SUMMARY_PATH"   # failed-state span (Luacheck)
+          grep -F '**Luacheck** - **fail**' "$SUMMARY_PATH"
           grep -q '<pre>' "$SUMMARY_PATH"   # luacheck output on failure
-          grep -q '#1a7f37' "$SUMMARY_PATH"  # validate.lua passed
+          grep -F '**validate.lua** - **pass**' "$SUMMARY_PATH"
           rm -f "$SUMMARY_PATH"
 
   run-both-script-fails:
