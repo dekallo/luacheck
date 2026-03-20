@@ -63,7 +63,7 @@ runs:
     - name: Run luacheck
       shell: bash
       run: |
-        docker pull -q ghcr.io/dekallo/luacheck:latest
+        docker pull -q ghcr.io/dekallo/luacheck:latest >/dev/null
 
         EXTRA=()
         if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
