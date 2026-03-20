@@ -1,12 +1,7 @@
 #!/bin/sh
 # luacheck GitHub Action entrypoint.
-# Runs luacheck (optional) and/or a custom Lua script. Reads inputs from env vars
-# set by the composite action (INPUT_* and GITHUB_WORKSPACE).
-#
-# Modes (first arg):
-#   luacheck  - setup + run luacheck only (job mode)
-#   script    - setup + run custom script only (job mode)
-#   (none)    - setup + luacheck + script (host mode, one-shot)
+# Runs luacheck (optional) and/or a custom Lua script. Reads INPUT_* and GITHUB_WORKSPACE.
+# Optional job summary when INPUT_JOB_SUMMARY=true and GITHUB_STEP_SUMMARY is set.
 set -e
 
 # --- Parse inputs (from env when used as GitHub Action) ---
@@ -22,6 +17,54 @@ CUSTOM_SCRIPT="${INPUT_CUSTOM_SCRIPT:-}"
 CUSTOM_ARGS="${INPUT_CUSTOM_ARGS:-.}"
 RUN_LUACHECK="${INPUT_RUN_LUACHECK:-true}"
 FAIL_FAST="${INPUT_FAIL_FAST:-false}"
+JOB_SUMMARY="${INPUT_JOB_SUMMARY:-false}"
+
+luacheck_exit=0
+script_exit=0
+# Set to 1 when fail_fast exits after luacheck so summary does not show script as "passed".
+EARLY_EXIT_NO_SCRIPT=0
+
+# --- Append Markdown to the workflow run summary (when available) ---
+# https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#adding-a-job-summary
+write_job_summary() {
+    [ "$JOB_SUMMARY" = "true" ] || return 0
+    [ -n "${GITHUB_STEP_SUMMARY:-}" ] || return 0
+    # File may not exist in local docker runs
+    if ! ( : >> "$GITHUB_STEP_SUMMARY" ) 2>/dev/null; then
+        return 0
+    fi
+    {
+        echo "## luacheck"
+        echo ""
+        if [ "$RUN_LUACHECK" = "true" ]; then
+            echo "### Luacheck"
+            if [ "$luacheck_exit" -eq 0 ]; then
+                echo "**Result:** passed (exit 0)"
+            else
+                echo "**Result:** failed (exit $luacheck_exit)"
+            fi
+            echo ""
+        else
+            echo "### Luacheck"
+            echo "_Skipped (\`run_luacheck: false\`)._"
+            echo ""
+        fi
+        if [ -n "$CUSTOM_SCRIPT" ]; then
+            echo "### Custom script"
+            echo "Script: \`$CUSTOM_SCRIPT\`"
+            if [ "$EARLY_EXIT_NO_SCRIPT" -eq 1 ]; then
+                echo "_Not run (fail_fast after luacheck failed)._"
+            elif [ "$script_exit" -eq 0 ]; then
+                echo "**Result:** passed (exit 0)"
+            else
+                echo "**Result:** failed (exit $script_exit)"
+            fi
+            echo ""
+        fi
+        echo "---"
+        echo "_Expand the step log for full output._"
+    } >> "$GITHUB_STEP_SUMMARY" || true
+}
 
 # --- Setup: download config, change to working directory ---
 setup() {
@@ -36,8 +79,6 @@ setup() {
 }
 
 # --- Annotate: convert luacheck output to GitHub workflow commands ---
-# When annotate=warning|error, parses luacheck lines and emits ::warning:: or ::error::
-# so issues appear as PR annotations. Luacheck format: "    path/to/file.lua:42:7: message"
 annotate() {
     case "$ANNOTATE" in
         warning|error)
@@ -82,9 +123,6 @@ run_luacheck() {
         luacheck_exit=$?
         set -e
         annotate < "$output"
-        if [ "$FAIL_FAST" = "true" ] && [ $luacheck_exit -ne 0 ]; then
-            exit $luacheck_exit
-        fi
     fi
     return $luacheck_exit
 }
@@ -121,40 +159,38 @@ run_custom_script() {
         set -e
         if [ $script_exit -ne 0 ]; then
             echo "::error::$CUSTOM_SCRIPT failed with exit code $script_exit" >&2
-            if [ "$FAIL_FAST" = "true" ]; then
-                exit $script_exit
-            fi
         fi
     fi
     return $script_exit
 }
 
-# --- Main: branch on first arg ---
-case "${1:-}" in
-    luacheck)
-        setup
-        run_luacheck
-        exit $?
-        ;;
-    script)
-        setup
-        run_custom_script
-        exit $?
-        ;;
-    *)
-        # Default: one-shot (host mode)
-        setup
-        luacheck_exit=0
-        script_exit=0
-        set +e
-        run_luacheck
-        luacheck_exit=$?
-        run_custom_script
-        script_exit=$?
-        set -e
-        if [ $luacheck_exit -ne 0 ] || [ $script_exit -ne 0 ]; then
-            exit 1
-        fi
-        exit 0
-        ;;
-esac
+# --- Main ---
+setup
+
+set +e
+run_luacheck
+luacheck_exit=$?
+set -e
+
+if [ "$FAIL_FAST" = "true" ] && [ "$RUN_LUACHECK" = "true" ] && [ $luacheck_exit -ne 0 ]; then
+    EARLY_EXIT_NO_SCRIPT=1
+    write_job_summary
+    exit $luacheck_exit
+fi
+
+set +e
+run_custom_script
+script_exit=$?
+set -e
+
+if [ "$FAIL_FAST" = "true" ] && [ -n "$CUSTOM_SCRIPT" ] && [ $script_exit -ne 0 ]; then
+    write_job_summary
+    exit $script_exit
+fi
+
+write_job_summary
+
+if [ $luacheck_exit -ne 0 ] || [ $script_exit -ne 0 ]; then
+    exit 1
+fi
+exit 0
