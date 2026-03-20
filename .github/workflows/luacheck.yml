@@ -166,17 +166,27 @@ jobs:
       - name: Build and run
         run: |
           docker build -t luacheck .
+          SUMMARY=$(mktemp)
           set +e
-          docker run --rm -v "$PWD:/workspace" \
+          out=$(docker run --rm \
+            -v "$PWD:/workspace" \
+            -v "$SUMMARY:$SUMMARY" \
             -e GITHUB_WORKSPACE=/workspace \
+            -e GITHUB_STEP_SUMMARY="$SUMMARY" \
             -e INPUT_FILES=test/bad.lua \
             -e INPUT_PATH=. \
             -e INPUT_RUN_LUACHECK=true \
             -e INPUT_FAIL_FAST=false \
             -e INPUT_CUSTOM_SCRIPT=test/validate.lua \
             -e INPUT_CUSTOM_ARGS=. \
-            luacheck
-          [ $? -ne 0 ]
+            -e INPUT_JOB_SUMMARY=true \
+            luacheck 2>&1)
+          code=$?
+          printf '%s\n' "$out"
+          [ "$code" -ne 0 ]
+          echo "$out" | grep -q 'Validation passed'  # script must run after luacheck failure
+          grep -q '### Checks' "$SUMMARY"
+          grep -q 'Luacheck' "$SUMMARY" && grep -q 'failed' "$SUMMARY"
 
   run-both-script-fails:
     name: fail_fast=false, both run, script fails
@@ -187,7 +197,7 @@ jobs:
         run: |
           docker build -t luacheck .
           set +e
-          docker run --rm -v "$PWD:/workspace" \
+          out=$(docker run --rm -v "$PWD:/workspace" \
             -e GITHUB_WORKSPACE=/workspace \
             -e INPUT_FILES=test/sample.lua \
             -e INPUT_PATH=. \
@@ -195,8 +205,12 @@ jobs:
             -e INPUT_FAIL_FAST=false \
             -e INPUT_CUSTOM_SCRIPT=test/validate.lua \
             -e INPUT_CUSTOM_ARGS=--fail \
-            luacheck
-          [ $? -ne 0 ]
+            luacheck 2>&1)
+          code=$?
+          printf '%s\n' "$out"
+          [ "$code" -ne 0 ]
+          echo "$out" | grep -q 'Running luacheck'
+          echo "$out" | grep -q 'Validation failed'
 
   # --- Input variations ---
   config-url:

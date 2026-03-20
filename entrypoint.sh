@@ -139,6 +139,9 @@ run_luacheck() {
         set -e
         annotate < "$LUACHECK_OUTPUT_FILE"
     fi
+    # With set -e, returning non-zero from a function aborts the script; callers
+    # still see $? from the return value.
+    set +e
     return $luacheck_exit
 }
 
@@ -178,6 +181,7 @@ run_custom_script() {
             echo "::error::$CUSTOM_SCRIPT failed with exit code $script_exit" >&2
         fi
     fi
+    set +e
     return $script_exit
 }
 
