@@ -64,9 +64,10 @@ runs:
     - name: Run luacheck
       shell: bash
       run: |
+        # docker pull -> docker run
         IMAGE="ghcr.io/dekallo/luacheck:latest"
         MARKER_DIR="${RUNNER_TEMP:-/tmp}/luacheck-action"
-        MARKER_FILE="${MARKER_DIR}/image-pulled"
+        MARKER_FILE="${MARKER_DIR}/luacheck-docker-init"
 
         mkdir -p "$MARKER_DIR"
         if [ ! -f "$MARKER_FILE" ]; then
