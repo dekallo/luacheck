@@ -26,6 +26,16 @@ jobs:
           custom_args: .
 ```
 
+### Custom script only (no luacheck)
+
+```yaml
+      - uses: dekallo/luacheck@main
+        with:
+          run_luacheck: false
+          custom_script: scripts/validate.lua
+          custom_args: .
+```
+
 ### With options
 
 ```yaml
@@ -78,6 +88,7 @@ Full reference: [luacheck CLI docs](https://luacheck.readthedocs.io/en/stable/cl
 ### File modifications
 
 Custom scripts run with the workspace mounted; they can read/write repo files.
+Within a single job, the action pulls the container image once and reuses it for later invocations.
 
 ## Repo structure
 

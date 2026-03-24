@@ -64,7 +64,15 @@ runs:
     - name: Run luacheck
       shell: bash
       run: |
-        docker pull -q ghcr.io/dekallo/luacheck:latest >/dev/null
+        IMAGE="ghcr.io/dekallo/luacheck:latest"
+        MARKER_DIR="${RUNNER_TEMP:-/tmp}/luacheck-action"
+        MARKER_FILE="${MARKER_DIR}/image-pulled"
+
+        mkdir -p "$MARKER_DIR"
+        if [ ! -f "$MARKER_FILE" ]; then
+          docker pull -q "$IMAGE" >/dev/null
+          touch "$MARKER_FILE"
+        fi
 
         EXTRA=()
         if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
@@ -88,7 +96,7 @@ runs:
           -e INPUT_FAIL_FAST="${{ inputs.fail_fast }}" \
           -e INPUT_JOB_SUMMARY="${{ inputs.job_summary }}" \
           -e GITHUB_WORKSPACE=/workspace \
-          ghcr.io/dekallo/luacheck:latest 2>&1)
+          "$IMAGE" 2>&1)
         exitcode=$?
         echo "$output"
         exit "$exitcode"
